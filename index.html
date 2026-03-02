@@ -151,39 +151,40 @@ function detectBestDutchVoice() {
     const voices = synth.getVoices();
     if (!voices.length) return;
 
-    // Pontos nl-NL
-    let voice = voices.find(v => v.lang === "nl-NL");
+    // 1️⃣ Először próbáljuk meg a belga NL-t
+    let voice = voices.find(v => v.lang === "nl-BE");
 
-    // Bármilyen nl-*
-    if (!voice) {
-        voice = voices.find(v => v.lang.toLowerCase().startsWith("nl"));
-    }
+    // 2️⃣ Ha nincs belga NL, próbáljuk NL-NL
+    if (!voice) voice = voices.find(v => v.lang === "nl-NL");
 
-    // Google NL preferencia
+    // 3️⃣ Ha nincs semmi, bármi nl-*
+    if (!voice) voice = voices.find(v => v.lang.toLowerCase().startsWith("nl"));
+
+    // 4️⃣ Ha még mindig nincs, próbáljunk név alapján
     if (!voice) {
         voice = voices.find(v =>
             v.name.toLowerCase().includes("dutch") ||
-            v.name.toLowerCase().includes("nederlands")
+            v.name.toLowerCase().includes("nederlands") ||
+            v.name.toLowerCase().includes("belg")
         );
     }
 
     if (voice) {
         selectedVoice = voice;
-        console.log("NL voice gevonden:", voice.name);
+        console.log("NL voice gevonden:", voice.name, voice.lang);
     } else {
         console.warn("⚠️ Geen Nederlandse stem gevonden.");
         selectedVoice = null;
     }
 }
 
-// Android/Chrome miatt kötelező
+// Android / Chrome miatt kötelező
 if (speechSynthesis.onvoiceschanged !== undefined) {
     speechSynthesis.onvoiceschanged = detectBestDutchVoice;
 }
 
+// futtatjuk azonnal is
 detectBestDutchVoice();
-
-
 
 function selectVoice(langPrefix="nl"){
     const voices = synth.getVoices();
@@ -198,12 +199,10 @@ function speak(text, onEnd) {
 
     const u = new SpeechSynthesisUtterance(text);
 
-    // 🔥 MINDIG állítsuk be a nyelvet
-    u.lang = "nl-NL";
+    // MINDIG állítsuk be a nyelvet
+    u.lang = selectedVoice?.lang || "nl-NL";
 
-    if (selectedVoice) {
-        u.voice = selectedVoice;
-    }
+    if (selectedVoice) u.voice = selectedVoice;
 
     u.pitch = 1;
     u.rate = 1;
