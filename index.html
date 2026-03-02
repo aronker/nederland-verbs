@@ -435,10 +435,10 @@ document.getElementById("sortSelector").addEventListener("change", ()=>{
     let sorted = [...verbList];
     const sortMode = document.getElementById("sortSelector").value;
     if(sortMode==="abc") {
-        verbs.sort((a,b)=>a.word.localeCompare(b.word,'nl'));
+        sorted.sort((a,b)=>a.word.localeCompare(b.word,'nl'));
     }
     else if(sortMode==="abc_irregular_first") {
-        verbs.sort((a,b)=>{
+        sorted.sort((a,b)=>{
             const aIrreg = a.type.toLowerCase() === "irregulier";
             const bIrreg = b.type.toLowerCase() === "irregulier";
 
@@ -453,7 +453,7 @@ document.getElementById("sortSelector").addEventListener("change", ()=>{
     }
 
     displayVerbs(sorted);
-}
+});
 
 document.getElementById("downloadTemplate").addEventListener("click", function() {
     const link = document.createElement("a");
