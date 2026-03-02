@@ -56,6 +56,9 @@ tbody tr td {
     padding: 12px 15px;
     vertical-align: middle;
 }
+td[data-label="Werkwoord"] {
+    font-weight: bold;
+}
 .type-badge {
     display: inline-block;
     padding: 2px 6px;
@@ -66,7 +69,7 @@ tbody tr td {
     cursor: default;
 }
 .conjugation { cursor: pointer; }
-.irreg-cell { background-color: #ffe5e5; border-radius: 4px; }
+.irreg-cell { background-color: #ffe5e5; }
 .play-icon { margin-right: 5px; cursor: pointer; font-weight: bold; }
 
 /* Mobil optimalizáció */
@@ -91,6 +94,9 @@ tbody tr td {
         content: attr(data-label);
         font-weight: bold;
         flex-basis: 40%;
+    }
+    td[data-label="Werkwoord"] {
+        background-color: #a7cbbc;
     }
 }
 </style>
