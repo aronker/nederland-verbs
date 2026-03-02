@@ -116,6 +116,7 @@ td[data-label="Werkwoord"] {
         <select id="sortSelector">
             <option value="abc">ABC</option>
             <option value="random">Willekeurig</option>
+            <option value="abc_irregular_first">ABC (irregulier eerst)</option>
         </select>
     </label>
 </div>
@@ -345,8 +346,23 @@ function handleFileInput(file){
         });
 
         const sortMode = document.getElementById("sortSelector").value;
-        if(sortMode==="abc") verbs.sort((a,b)=>a.word.localeCompare(b.word,'nl'));
-        else if(sortMode==="random") shuffleArray(verbs);
+        if(sortMode==="abc") {
+            verbs.sort((a,b)=>a.word.localeCompare(b.word,'nl'));
+        }
+        else if(sortMode==="abc_irregular_first") {
+            verbs.sort((a,b)=>{
+                const aIrreg = a.type.toLowerCase() === "irregulier";
+                const bIrreg = b.type.toLowerCase() === "irregulier";
+
+                if(aIrreg && !bIrreg) return -1;
+                if(!aIrreg && bIrreg) return 1;
+
+                return a.word.localeCompare(b.word,'nl');
+            });
+        }
+        else if(sortMode==="random") {
+            shuffleArray(verbs);
+        }
 
         displayVerbs(verbs);
     };
@@ -391,8 +407,23 @@ function parseCSV(text){
     });
 
     const sortMode = document.getElementById("sortSelector").value;
-    if(sortMode==="abc") verbs.sort((a,b)=>a.word.localeCompare(b.word,'nl'));
-    else if(sortMode==="random") shuffleArray(verbs);
+    if(sortMode==="abc") {
+        verbs.sort((a,b)=>a.word.localeCompare(b.word,'nl'));
+    }
+    else if(sortMode==="abc_irregular_first") {
+        verbs.sort((a,b)=>{
+            const aIrreg = a.type.toLowerCase() === "irregulier";
+            const bIrreg = b.type.toLowerCase() === "irregulier";
+
+            if(aIrreg && !bIrreg) return -1;
+            if(!aIrreg && bIrreg) return 1;
+
+            return a.word.localeCompare(b.word,'nl');
+        });
+    }
+    else if(sortMode==="random") {
+        shuffleArray(verbs);
+    }
 
     displayVerbs(verbs);
 }
@@ -403,10 +434,26 @@ document.getElementById("sortSelector").addEventListener("change", ()=>{
     if(!verbList.length) return;
     let sorted = [...verbList];
     const sortMode = document.getElementById("sortSelector").value;
-    if(sortMode==="abc") sorted.sort((a,b)=>a.word.localeCompare(b.word,'nl'));
-    else if(sortMode==="random") shuffleArray(sorted);
+    if(sortMode==="abc") {
+        verbs.sort((a,b)=>a.word.localeCompare(b.word,'nl'));
+    }
+    else if(sortMode==="abc_irregular_first") {
+        verbs.sort((a,b)=>{
+            const aIrreg = a.type.toLowerCase() === "irregulier";
+            const bIrreg = b.type.toLowerCase() === "irregulier";
+
+            if(aIrreg && !bIrreg) return -1;
+            if(!aIrreg && bIrreg) return 1;
+
+            return a.word.localeCompare(b.word,'nl');
+        });
+    }
+    else if(sortMode==="random") {
+        shuffleArray(verbs);
+    }
+
     displayVerbs(sorted);
-});
+}
 
 document.getElementById("downloadTemplate").addEventListener("click", function() {
     const link = document.createElement("a");
