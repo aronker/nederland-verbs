@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Werkwoorden Trainer</title>
+<style>
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    padding: 20px;
+    background: #f0f2f5;
+    color: #333;
+}
+h2 { margin-bottom: 15px; font-weight: 600; }
+.controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+button, input, select {
+    padding: 8px 14px;
+    font-size: 16px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    cursor: pointer;
+    background: #fff;
+    transition: 0.2s;
+}
+button:hover, input:hover, select:hover { border-color: #a7cbbc; }
+
+table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 8px;
+}
+thead tr th {
+    background-color: #a7cbbc;
+    color: #fff;
+    padding: 12px 15px;
+    text-align: left;
+}
+tbody tr {
+    display: table-row;
+    background: #fff;
+    border-radius: 6px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+tbody tr td {
+    display: table-cell;
+    padding: 12px 15px;
+    vertical-align: middle;
+}
+.type-badge {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 13px;
+    color: #fff;
+    background-color: #dc3545;
+    cursor: default;
+}
+.conjugation { cursor: pointer; }
+.irreg-cell { background-color: #ffe5e5; border-radius: 4px; }
+.play-icon { margin-right: 5px; cursor: pointer; font-weight: bold; }
+
+/* Mobil optimalizáció */
+@media (max-width: 600px){
+    table, thead, tbody, th, td, tr {
+        display: block;
+    }
+    thead { display: none; }
+    tbody tr {
+        margin-bottom: 15px;
+        background: #fff;
+        padding: 10px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+        border-radius: 8px;
+    }
+    tbody tr td {
+        display: flex;
+        justify-content: space-between;
+        padding: 6px 10px;
+    }
+    tbody tr td::before {
+        content: attr(data-label);
+        font-weight: bold;
+        flex-basis: 40%;
+    }
+}
+</style>
+</head>
+<body>
+
+<h2>Werkwoorden Trainer</h2>
+
+<div class="controls">
+    <label>
+        Laad CSV bestand:
+        <input type="file" id="csvFile" accept=".csv">
+    </label>
+    <label>
+        Sorteren:
+        <select id="sortSelector">
+            <option value="abc">ABC</option>
+            <option value="random">Willekeurig</option>
+        </select>
+    </label>
+</div>
+
+<table id="verbTable">
+    <thead>
+        <tr>
+            <th></th> <!-- Teljes sor lejátszás ikon -->
+            <th>Type</th>
+            <th>Werkwoord</th>
+            <th>Ik</th>
+            <th>Jij/Je</th>
+            <th>Hij/Zij</th>
+            <th>Wij/We</th>
+            <th>Jullie</th>
+            <th>Zij/Ze</th>
+            <th>Prepositie</th>
+            <th>Betekenis</th>
+            <th>Voorbeeld</th>
+        </tr>
+    </thead>
+    <tbody></tbody>
+</table>
+
+<script>
+let selectedVoice = null;
+const synth = window.speechSynthesis;
+let verbList = [];
+let currentUtterances = [];
+
+function selectVoice(langPrefix="nl"){
+    const voices = synth.getVoices();
+    const match = voices.find(v=>v.lang.startsWith(langPrefix));
+    if(match) selectedVoice = match;
+}
+if(speechSynthesis.onvoiceschanged!==undefined){ speechSynthesis.onvoiceschanged = ()=>selectVoice("nl"); }
+selectVoice("nl");
+
+function speak(text, onEnd){
+    if(!text) return;
+    const u = new SpeechSynthesisUtterance(text);
+    if(selectedVoice) u.voice = selectedVoice;
+    u.pitch = 1; u.rate = 1;
+    if(onEnd) u.onend = onEnd;
+    synth.speak(u);
+    currentUtterances.push(u);
+}
+
+function stopSpeech(){
+    synth.cancel();
+    currentUtterances = [];
+}
+
+function shuffleArray(arr){
+    for(let i=arr.length-1;i>0;i--){
+        const j=Math.floor(Math.random()*(i+1));
+        [arr[i],arr[j]]=[arr[j],arr[i]];
+    }
+}
+
+function displayVerbs(verbs){
+    const tbody = document.querySelector("#verbTable tbody");
+    tbody.innerHTML="";
+    verbList = verbs;
+
+    verbs.forEach(v=>{
+        const tr = document.createElement("tr");
+
+        // Teljes sor lejátszás ikon
+        const tdPlay = document.createElement("td");
+        tdPlay.setAttribute("data-label","");
+        const playSpan = document.createElement("span");
+        playSpan.className="play-icon";
+        playSpan.textContent="▶️";
+        playSpan.addEventListener("click",(e)=>{
+            e.stopPropagation();
+            if(playSpan.textContent === "▶️"){
+                playSpan.textContent = "⏹️";
+                const texts = [v.word, v.ik, v.jij, v.hij, v.wij, v.jullie, v.zij, v.example];
+                let index=0;
+                function next(){
+                    if(index>=texts.length){
+                        playSpan.textContent = "▶️";
+                        return;
+                    }
+                    speak(texts[index], ()=>{ index++; next(); });
+                }
+                next();
+            } else {
+                stopSpeech();
+                playSpan.textContent = "▶️";
+            }
+        });
+        tdPlay.appendChild(playSpan);
+        tr.appendChild(tdPlay);
+
+        // Type
+        const tdType = document.createElement("td");
+        tdType.setAttribute("data-label","Type");
+        if(v.type && v.type.toLowerCase()==='irregulier'){
+            const span = document.createElement("span");
+            span.textContent = v.type;
+            span.className='type-badge';
+            tdType.appendChild(span);
+        } else {
+            tdType.textContent = 'regulier';
+        }
+        tr.appendChild(tdType);
+
+        // Werkwoord
+        const tdWord = document.createElement("td");
+        tdWord.textContent = v.word;
+        tdWord.className="conjugation";
+        tdWord.setAttribute("data-label","Werkwoord");
+        tdWord.addEventListener("click", ()=>speak(v.word));
+        tr.appendChild(tdWord);
+
+        // Conjugations
+        ['ik','jij','hij','wij','jullie','zij'].forEach((key)=>{
+            const td = document.createElement("td");
+            td.textContent = v[key];
+            td.classList.add('conjugation');
+            td.setAttribute("data-label", key);
+            if(v.type && v.type.toLowerCase()==='irregulier') td.classList.add('irreg-cell');
+            td.addEventListener("click", ()=>speak(v[key]));
+            tr.appendChild(td);
+        });
+
+        // Prepositie
+        const tdPrep = document.createElement("td");
+        tdPrep.textContent = v.prep && v.prep.trim() ? v.prep : '-';
+        tdPrep.setAttribute("data-label","Prepositie");
+        tr.appendChild(tdPrep);
+
+        // Betekenis
+        const tdMeaning = document.createElement("td");
+        tdMeaning.textContent = v.meaning || '';
+        tdMeaning.setAttribute("data-label","Betekenis");
+        tr.appendChild(tdMeaning);
+
+        // Voorbeeld
+        const tdExample = document.createElement("td");
+        tdExample.textContent = v.example || '';
+        tdExample.className="conjugation";
+        tdExample.setAttribute("data-label","Voorbeeld");
+        tdExample.addEventListener("click", ()=>speak(v.example));
+        tr.appendChild(tdExample);
+
+        tbody.appendChild(tr);
+    });
+}
+
+// CSV betöltés
+function handleFileInput(file){
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e){
+        let lines = e.target.result.split(/\r?\n/).map(l=>l.trim()).filter(l=>l);
+        lines = lines.slice(1); // header kihagyása
+
+        let verbs = lines.map(line=>{
+            let parts = line.includes('\t') ? line.split('\t') : line.split(';');
+            parts = parts.map(p => p.trim());
+            return {
+                word: parts[0] || '',
+                type: parts[1] || 'regulier',
+                ik: parts[2] || '',
+                jij: parts[3] || '',
+                hij: parts[4] || '',
+                wij: parts[5] || '',
+                jullie: parts[6] || '',
+                zij: parts[7] || '',
+                prep: parts[8] || '',
+                meaning: parts[9] || '',
+                example: parts[10] || ''
+            };
+        });
+
+        const sortMode = document.getElementById("sortSelector").value;
+        if(sortMode==="abc") verbs.sort((a,b)=>a.word.localeCompare(b.word,'nl'));
+        else if(sortMode==="random") shuffleArray(verbs);
+
+        displayVerbs(verbs);
+    };
+    reader.readAsText(file);
+}
+
+document.getElementById("csvFile").addEventListener("change", e=>handleFileInput(e.target.files[0]));
+document.getElementById("sortSelector").addEventListener("change", ()=>{
+    if(!verbList.length) return;
+    let sorted = [...verbList];
+    const sortMode = document.getElementById("sortSelector").value;
+    if(sortMode==="abc") sorted.sort((a,b)=>a.word.localeCompare(b.word,'nl'));
+    else if(sortMode==="random") shuffleArray(sorted);
+    displayVerbs(sorted);
+});
+</script>
+
+</body>
+</html>
