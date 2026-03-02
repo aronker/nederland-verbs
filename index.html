@@ -291,6 +291,51 @@ function handleFileInput(file){
     reader.readAsText(file);
 }
 
+function loadCSVFromServer(path){
+    fetch(path)
+        .then(response => {
+            if(!response.ok) throw new Error("CSV niet gevonden");
+            return response.text();
+        })
+        .then(text => {
+            parseCSV(text);
+        })
+        .catch(err => {
+            console.log("Geen automatische CSV geladen.");
+        });
+}
+
+function parseCSV(text){
+    let lines = text.split(/\r?\n/).map(l=>l.trim()).filter(l=>l);
+    lines = lines.slice(1); // header kihagyása
+
+    let verbs = lines.map(line=>{
+        let parts = line.includes('\t') ? line.split('\t') : line.split(';');
+        parts = parts.map(p => p.trim());
+
+        return {
+            word: parts[0] || '',
+            type: parts[1] || 'regulier',
+            ik: parts[2] || '',
+            jij: parts[3] || '',
+            hij: parts[4] || '',
+            wij: parts[5] || '',
+            jullie: parts[6] || '',
+            zij: parts[7] || '',
+            prep: parts[8] || '',
+            meaning: parts[9] || '',
+            example: parts[10] || ''
+        };
+    });
+
+    const sortMode = document.getElementById("sortSelector").value;
+    if(sortMode==="abc") verbs.sort((a,b)=>a.word.localeCompare(b.word,'nl'));
+    else if(sortMode==="random") shuffleArray(verbs);
+
+    displayVerbs(verbs);
+}
+
+object.addEventListener("load", loadCSVFromServer);
 document.getElementById("csvFile").addEventListener("change", e=>handleFileInput(e.target.files[0]));
 document.getElementById("sortSelector").addEventListener("change", ()=>{
     if(!verbList.length) return;
